@@ -1,0 +1,31 @@
+---
+- name: Set up system environment
+  hosts: all
+  become: true
+  gather_facts: no
+  tasks:
+    - name: Create swapfile
+      shell: "test -f /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=2048"
+      args:
+        warn: false
+    - name: Modify swapfile permissions
+      shell: "[ $(swapon -s | wc -l) -gt 0 ] || chmod 600 /swapfile"
+      args:
+        warn: false
+    - name: mkswap swapfile
+      shell: "[ $(swapon -s | wc -l) -gt 0 ] || mkswap /swapfile"
+      args:
+        warn: false
+    - name: Adding swap to fstab
+      shell: "grep -qxF '/swapfile swap swap defaults 0 0' /etc/fstab || echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab"
+      args:
+        warn: false
+    - name: Activate swap file
+      shell: "swapon -a"
+      args:
+        warn: false
+    - name: Record Output swap file status
+      command: "swapon -s"
+      register: swapstat
+    - name: Record Output swap file status
+      debug: msg="{{ swapstat.stdout }}"

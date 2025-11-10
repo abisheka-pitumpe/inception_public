@@ -1,0 +1,30 @@
+<!-- simple html -->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!-- head definitions go here -->
+    <title>FingerprinTLS test S3</title>
+</head>
+
+<body>
+    <!-- the content goes here -->
+    <p>Test, test ,test.</p>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js">
+
+    </script>
+    <script>
+        var url_str = "../wp-content/themes/twentynineteen/js/customjsn.json";
+        $.ajax({
+            url: url_str,
+            dataType: "json",
+            success: function (data) {
+                console.log("success");
+                console.log(data);
+            }
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,50 @@
+#webmin
+
+#yum install perl perl-Net-SSLeay openssl perl-IO-Tty perl-Encode-Detect unzip
+#
+#rpm -U webmin-1.930-1.noarch.rpm
+
+---
+- name: Install WEBMIN
+  hosts: all
+  become: true
+  gather_facts: no
+  tasks:
+    - name: Install yum packages for webmin
+      shell: "sudo yum -y install perl perl-Net-SSLeay perl-JSON perl-Authen-PAM perl-CPAN openssl perl-IO-Tty perl-Encode-Detect unzip"
+      args:
+        warn: false
+    - name: Copy Webmin install RPM
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        #remote_src: no 
+      with_items:
+        - { src: '../webmin-files/webmin-1.930-1.noarch.rpm' , dest: '/home/centos/webmin-1.930-1.noarch.rpm'}
+    - name: Install webmin via RPM
+      shell: "rpm -U --replacepkgs /home/centos/webmin-1.930-1.noarch.rpm"
+      args:
+        warn: false
+    - name: Copy WP files
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        #remote_src: no 
+      with_items:
+        - { src: '../webmin-files/web-lib-funcs.pl' , dest: '/usr/libexec/webmin/web-lib-funcs.pl'}
+        - { src: '../webmin-files/session_login.cgi' , dest: '/usr/libexec/webmin/authentic-theme/session_login.cgi'}
+        - { src: '../webmin-files/jq.js' , dest: '/usr/libexec/webmin/authentic-theme/unauthenticated/js/jq.js'}
+        - { src: '../webmin-files/index.php' , dest: '/var/www/html/index.php'}
+        
+    - name: Add webmin ports
+      shell: "firewall-cmd --permanent --add-port=10000/tcp && firewall-cmd --reload"
+      args:
+        warn: false
+    - name: Restart httpd to apply all changes
+      service:
+        name: httpd
+        state: restarted
+    - name: Restart webmin to apply all changes
+      shell: "sudo service webmin restart"
+      args:
+        warn: false

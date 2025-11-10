@@ -1,0 +1,73 @@
+# php stuff
+# sudo yum install php-xml php-mbstring php-EasyRdf
+
+# composer stuff
+#just copy-paste composer.phar for the fuck sake!
+
+# (sudo) php composer.phar create-project drupal-composer/drupal-project:8.x-dev /var/www/html --no-interaction
+
+#mysql
+---
+- name: Install Drupal
+  hosts: all
+  become: true
+  gather_facts: no
+  vars:
+    root_db_password: b0td3t3ct!15
+    drupal_usr_password: b00tdetectCx5
+    drupal_usr_name: drupal_usr
+  tasks:
+  - name: Install packages
+    shell: "sudo yum -y install git php-xml php-mbstring php-opcache php-EasyRdf unzip"
+    args:
+      warn: false
+  - name: Extract Drupal Folder and Copy Contents
+    unarchive:
+      src: ../drupal_files/drupal.tar.gz
+      dest: /
+      remote_src: no
+  - name: Copy drupaldb.sql file
+    copy:
+      src: ../drupal_files/drupaldb.sql
+      dest: /
+      remote_src: no
+
+  - name: Setup a new Drupal db
+    mysql_db:
+      name: drupaldb
+      login_password: "{{ root_db_password }}"
+      state: import
+      target: /drupaldb.sql
+
+  - name: Add Drupal users
+    mysql_user: name={{ drupal_usr_name }} host={{ item }} login_password={{ root_db_password }} password={{ drupal_usr_password }} priv='*.*:ALL'
+    with_items:
+      - localhost
+
+  - name: Move Drupal contents to apache directory
+    shell: rsync -avP /drupal/ /var/www/html/
+
+  - name: Copy drupal files
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      #remote_src: no 
+    with_items:
+      # - { src: '../apache_configs/htaccess_drupal' , dest: '/var/www/html/web/.htaccess'}
+      # - { src: '../apache_configs/htaccess_drupal_fpcode' , dest: '/var/www/html/fpcodes_drupal/.htaccess'}
+      - { src: '../apache_configs/httpd_drupal.conf' , dest: '/etc/httpd/conf.d/httpd_drupal.conf'}
+      - { src: '../apache_configs/httpd_fpgen.conf' , dest: '/etc/httpd/conf.d/httpd_fpgen.conf'}
+      - { src: '../apache_configs/fpcodes_gen/' , dest: '/var/www/fpcodes_gen/'}
+      - { src: '../drupal_files/index.php' , dest: '/var/www/html/web/index.php'}
+  # we don't use drush anymore.
+  # - name: Change permission of files
+  #   shell: "/var/www/html/vendor/bin/drush site-install --db-url=mysql://{{ drupal_usr_name }}:{{ drupal_usr_password }}@localhost/drupaldb --no-interaction"
+  #   args:
+  #     warn: false
+  - name: Change permission of files
+    shell: "chown -R apache:apache /var/www/fpcodes_gen && chown -R apache:apache /var/www/html"
+    args:
+      warn: false
+
+
+#lastly don't forget chown -R apache:apache /var/www/html

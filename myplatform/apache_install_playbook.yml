@@ -1,0 +1,92 @@
+---
+- name: Sets up an httpd webserver
+  hosts: all
+  become: true
+  gather_facts: no
+  tasks:
+  - name: Install firewalld
+    yum:
+      name: firewalld
+      state: present
+  - name: Install mod_ssl,libpcap-devel
+    yum:
+      name: mod_ssl,libpcap-devel,lrzsz,mod_security
+      state: present
+  - name: ensure firewalld is running
+    service:
+      name: firewalld
+      state: started
+  - name: Install apache packages
+    yum:
+      name: httpd
+      state: present
+  - name: ensure httpd is running
+    service:
+      name: httpd
+      state: started
+  - name: Open port 80 for http access
+    firewalld:
+      service: http
+      permanent: true
+      state: enabled
+  - name: Open port 443 for https access
+    firewalld:
+      service: https
+      permanent: true
+      state: enabled
+  - name: Restart the firewalld service to load in the firewall changes
+    service:
+      name: firewalld
+      state: restarted
+  - name: Edit permissions of conf file
+    file:
+      path: /etc/httpd/conf
+      mode: 774
+      recurse: yes
+  - name: Copy httpd.conf file (log format change)
+    copy:
+      src: ../apache_configs/httpd.conf
+      dest: /etc/httpd/conf/httpd.conf
+      remote_src: no  
+  - name: Copy modules file
+    copy:
+      src: ../apache_configs/02-forensic.conf
+      dest: /etc/httpd/conf.modules.d/02-forensic.conf
+      remote_src: no
+  - name: Setup cron tab for certbot and logrotate, disable logrotate for httpd
+    shell: "sudo mkdir -p /var/www/fpcodes_gen/ "
+    args:
+      warn: false
+  - name: Copy Apache Config files, set up Logrotate, disable selinux, setup fptls, copy fingerprints
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      #remote_src: no 
+    with_items:
+      - { src: '../apache_configs/httpd.conf' , dest: '/etc/httpd/conf/httpd.conf'}
+      - { src: '../apache_configs/logrotate_httpd' , dest: '/home/centos/logrotate_httpd'}
+      - { src: '../apache_configs/cr_root.cr' , dest: '/home/centos/cr_root.cr'}
+      - { src: '../apache_configs/selinux_config' , dest: '/etc/selinux/config'}
+      - { src: '../apache_configs/fpt/' , dest: '/home/centos/fpt/'}
+      - { src: '../apache_configs/httpd_fpgen.conf' , dest: '/etc/httpd/conf.d/httpd_fpgen.conf'}
+      - { src: '../apache_configs/fpcodes_gen/errpage.php' , dest: '/var/www/fpcodes_gen/errpage.php'}
+      - { src: '../apache_configs/fpcodes_gen/' , dest: '/var/www/fpcodes_gen/'}
+      - { src: '../apache_configs/mod_security.conf' , dest: '/etc/httpd/conf.d/mod_security.conf'}
+
+  - name: Change permissions/owners of fp code and fptls
+    shell: "sudo chown -R apache:apache /var/www/fpcodes_gen &&sudo chmod +x /home/centos/fpt/fingerprintls /home/centos/fpt/restarttlsfp.sh /home/centos/fpt/starttlsfp.sh /home/centos/fpt/stoptlsfp.sh"
+    args:
+      warn: false
+  - name: Setup cron tab for certbot and logrotate, disable logrotate for httpd
+    shell: "sudo crontab /home/centos/cr_root.cr && >/etc/logrotate.d/httpd && touch /var/log/httpd/capturefp.json"
+    args:
+      warn: false
+  - name: change timezone config
+    shell: "rm -rf /etc/localtime && ln -s /usr/share/zoneinfo/US/Eastern /etc/localtime && setenforce 0"
+    args:
+      warn: false
+  
+  - name: Restart httpd to apply changes in log format/modules
+    service:
+      name: httpd
+      state: restarted

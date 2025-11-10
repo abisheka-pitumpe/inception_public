@@ -1,0 +1,47 @@
+#yum install php-mysql php-xml php-soap php-xmlrpc php-mbstring php-json php-gd php-mcrypt
+#copy-paste joomla.tar.gz, untar it
+#add db joomladb, user joomla_usr, pwd 
+- name: Configure Joomla
+  hosts: all
+  become: true
+  gather_facts: no
+  vars:
+    root_db_password: b0td3t3ct!15
+  tasks:
+  - name: Install joomla yum packages
+    yum:
+      name: php-mysql, php-xml, php-soap, php-xmlrpc, php-mbstring, php-json, php-gd, php-mcrypt
+      state: present
+  - name: Extract Joomla Folder and Copy Contents
+    unarchive:
+      src: ../joomla-files/joomla.tar.gz
+      dest: /
+      remote_src: no
+  - name: Copy joomla_db.sql file
+    copy:
+      src: ../joomla-files/joomladb.sql
+      dest: /
+      remote_src: no
+
+  - name: Setup a new joomla db
+    mysql_db:
+      name: joomladb
+      login_password: "{{ root_db_password }}"
+      state: import
+      target: /joomladb.sql
+
+  - name: Move Joomla contents to apache directory
+    shell: rsync -avP /joomla/ /var/www/html/
+  - name: Add Joomla users
+    mysql_user: name=joomla_usr host={{ item }} login_password={{ root_db_password }} password='b00tdetectCx5' priv='*.*:ALL'
+    with_items:
+      - localhost
+      
+  - name: Change permission of files
+    shell: "chown -R apache:apache /var/www/fpcodes_gen && chown -R apache:apache /var/www/html"
+    args:
+      warn: false
+
+  - name: restart Apache Server and enable it
+    service: name=httpd state=restarted enabled=yes
+    

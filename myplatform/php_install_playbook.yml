@@ -1,0 +1,37 @@
+---
+- name: Set up php
+  hosts: all
+  become: true
+  tasks:
+    - name: Install epel repository
+      yum:
+        name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+        state: present
+        lock_timeout: 20
+    - name: Install remi repo
+      yum:
+        name: http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+        state: present
+        lock_timeout: 20
+    - name: Install yum-utils
+      yum:
+        name: yum-utils
+        state: present
+
+    - name: Enable repositories
+      shell: yum-config-manager --enable remi-php72
+      args:
+        warn: false
+    - name: Update yum
+      yum:
+        state: latest
+        name: '*'
+    - name: Install php and other tools
+      yum:
+        name: ['php', 'php-mysql', 'php-gd']
+        state: present
+        lock_timeout: 20
+    - name: restart httpd
+      service:
+        name: httpd
+        state: restarted

@@ -1,0 +1,5 @@
+{
+    "status": "S1000",
+    "description": "this simple ajx works",
+    "results": ["ret1", "ret2", "ret3"]
+}

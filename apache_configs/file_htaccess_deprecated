@@ -1,0 +1,19 @@
+RewriteEngine On
+RewriteRule ^wp-content/themes/twentynineteen/js/customimg\.js$ wp-content/themes/twentynineteen/js/customimg.php
+RewriteRule ^wp-content/themes/twentynineteen/js/customajx\.js$ wp-content/themes/twentynineteen/js/customajx.php
+RewriteRule ^wp-content/themes/twentynineteen/js/customerrimg\.js$ wp-content/themes/twentynineteen/js/customerrimg.php
+RewriteRule ^wp-content/themes/twentynineteen/js/customerrajx\.js$ wp-content/themes/twentynineteen/js/customerrajx.php
+RewriteRule ^customhtm\.html$ customhtm.php
+
+Header Set Access-Control-Allow-Origin "placeholdercors1"
+
+#csp
+Header set Content-Security-Policy "default-src 'self' placeholdercsp1  http://code.jquery.com 'unsafe-inline'; font-src 'self' data:; script-src 'self' http://code.jquery.com 'unsafe-inline'; frame-ancestors 'none'; report-uri /csprpt.php"
+
+#later replaced in setcert.py
+
+#x-frame options
+Header set X-Frame-Options "deny"
+
+#hsts
+Header always set Strict-Transport-Security "max-age=63072000; includeSubdomains;"

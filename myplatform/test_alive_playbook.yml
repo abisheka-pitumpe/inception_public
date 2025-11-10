@@ -1,0 +1,15 @@
+---
+- name: Test if hosts alive
+  hosts: all
+  become: true
+  tasks:
+      - name: Copy nonce files
+        copy:
+          src: "{{ item.src }}"
+          dest: "{{ item.dest }}"
+          #remote_src: no 
+        with_items:
+          #- { src: '../wordpress/vis1.jpg' , dest: '/var/www/html/vis1.jpg'}
+          #- { src: '../wordpress/vis2.jpg' , dest: '/var/www/html/vis2.jpg'}
+          #- { src: '../wordpress/wp-content/themes/twentynineteen/functions.php' , dest: '/var/www/html/wp-content/themes/twentynineteen/functions.php'}
+          - { src: '../wordpress/vis1.jpg' , dest: '/home/centos/nonce1.jpg'}

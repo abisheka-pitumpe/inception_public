@@ -1,0 +1,48 @@
+---
+- name: Sets up LogPull Part and Munin Node
+  hosts: all
+  become: true
+  gather_facts: no
+  tasks:
+    # - name: Copy ReadDBht.py file
+    #   copy:
+    #     src: ../R53_python_script/LogPull/ReadDBht.py
+    #     dest: /home/centos/
+    #     remote_src: no  
+    - name: Install pip, munin, libpcap
+      yum:
+        name: python-pip, munin-node, libpcap-devel
+        state: present
+        lock_timeout: 20
+    - name: Upgrade pip
+      shell: sudo python -m pip install --upgrade pip
+      args:
+        warn: false
+    # - name: Install GeoIP for ip analysis
+    #   shell: sudo python -m pip install python-geoip python-geoip-geolite2
+    #   args:
+    #     warn: false
+    # munin part below
+    - name: Copy Munin-node.conf file
+      copy:
+        src: ../munin_configs/munin-node.conf
+        dest: /etc/munin/
+        remote_src: no
+    - name: Add munin ports
+      shell: "firewall-cmd --permanent --add-port=4949/tcp && firewall-cmd --reload"
+      args:
+        warn: false
+    - name: Start Munin
+      shell: "service munin-node restart"
+      args:
+        warn: false
+    - name: (re)Start TLSFP
+      shell: "sudo sh /home/centos/fpt/restarttlsfp.sh"
+      args:
+        warn: false
+    # munin part above
+    - name: Restart httpd to apply all changes
+      service:
+        name: httpd
+        state: restarted
+

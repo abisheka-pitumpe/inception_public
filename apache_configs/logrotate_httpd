@@ -1,0 +1,50 @@
+/var/log/httpd/access_log 
+/var/log/httpd/forensic_log
+/var/www/fpcodes_gen/cspviolog
+/var/log/httpd/capturefp.json
+/var/log/httpd/modsec.log
+/var/www/fpcodes_gen/fpjs2log
+/var/www/fpcodes_gen/httpheader
+ {
+    rotate 10
+    su root root
+    missingok
+    hourly
+    dateext
+    sharedscripts
+    postrotate
+        /bin/systemctl reload httpd.service > /dev/null 2>/dev/null || true
+        day=$(date +%Y%m%d%H)
+        daytime=$(date +%Y-%m-%d-%H-%M-%S)
+        mkdir -p /var/log/httpd/rot/
+	    mv /var/log/httpd/access_log-$day /var/log/httpd/rot/access_log_$daytime
+        mv /var/log/httpd/forensic_log-$day /var/log/httpd/rot/forensic_log_$daytime
+        mv /var/www/fpcodes_gen/cspviolog-$day /var/log/httpd/rot/cspviolog_$daytime
+        mv /var/log/httpd/capturefp.json-$day /var/log/httpd/rot/capturefp.json_$daytime
+        mv /var/log/httpd/modsec.log-$day /var/log/httpd/rot/modsec.log_$daytime
+        mv /var/www/fpcodes_gen/fpjs2log-$day /var/log/httpd/rot/fpjs2log_$daytime
+        mv /var/www/fpcodes_gen/httpheader-$day /var/log/httpd/rot/httpheader_$daytime
+
+        rm -f /var/log/httpd/rot/accesslog_latest /var/log/httpd/rot/forensiclog_latest /var/log/httpd/rot/cspviolog_latest /var/log/httpd/rot/capturefp.json_latest /var/log/httpd/rot/fpjs2log_latest /var/log/httpd/rot/httpheader_latest /var/log/httpd/rot/modsec.log_latest
+
+        cp /var/log/httpd/rot/access_log_$daytime /var/log/httpd/rot/accesslog_latest
+        cp /var/log/httpd/rot/forensic_log_$daytime /var/log/httpd/rot/forensiclog_latest
+        cp /var/log/httpd/rot/cspviolog_$daytime /var/log/httpd/rot/cspviolog_latest
+        cp /var/log/httpd/rot/capturefp.json_$daytime /var/log/httpd/rot/capturefp.json_latest
+        cp /var/log/httpd/rot/modsec.log_$daytime /var/log/httpd/rot/modsec.log_latest
+        cp /var/log/httpd/rot/fpjs2log_$daytime /var/log/httpd/rot/fpjs2log_latest
+        cp /var/log/httpd/rot/httpheader_$daytime /var/log/httpd/rot/httpheader_latest
+
+        >/var/www/fpcodes_gen/cspviolog
+        >/var/log/httpd/capturefp.json
+        >/var/log/httpd/modsec.log
+        >/var/www/fpcodes_gen/fpjs2log
+        >/var/www/fpcodes_gen/httpheader
+	
+        chown apache:apache /var/www/fpcodes_gen/httpheader
+        chown apache:apache /var/www/fpcodes_gen/cspviolog
+        chown apache:apache /var/www/fpcodes_gen/fpjs2log
+        sudo sh /home/centos/fpt/restarttlsfp.sh
+
+    endscript
+}

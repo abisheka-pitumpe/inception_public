@@ -1,0 +1,79 @@
+---
+- name: Sets up wordpress
+  hosts: all
+  become: true
+  tasks:
+    - name: Extract Fingerprint Wordpress Folder and Copy Contents
+      unarchive:
+        src: wordpress.tar.gz
+        dest: /
+        remote_src: no
+
+    - name: Move Wordpress contents to apache directory
+      shell: rsync -avP /wordpress/ /var/www/html/
+
+    # - name: Copy wp-config.php file
+    #   copy:
+    #     src: ../wp-config.php
+    #     dest: /var/www/html/
+    #     remote_src: no
+    # combined to next task
+    - name: Copy Apache Config files, set up Logrotate, disable selinux, setup fptls
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        #remote_src: no 
+      with_items:
+        # - { src: '../apache_configs/file_htaccess' , dest: '/var/www/html/.htaccess'}
+        - { src: '../wp-config.php' , dest: '/var/www/html/'}
+        
+    - name: Remove the sample config file
+      file:
+        path: /var/www/html/wp-config-sample.php
+        state: absent
+
+    - name: Remove the default apache HTML file
+      file:
+        path: /var/www/html/index.html
+        state: absent
+
+    - name: Creates uploads directory
+      file:
+        path: /var/www/html/wp-content/uploads
+        state: directory
+
+    - name: Edit ownership of html directory
+      file:
+        path: /var/www/html/
+        owner: apache
+        group: apache
+        recurse: yes
+
+    - name: restart httpd
+      service:
+        name: httpd
+        state: restarted
+
+    - name: restart MySQL Server and enable it
+      service: name=mysqld state=restarted enabled=yes
+
+    - name: Output inventory_hostname
+      debug: msg="Hostname is {{ inventory_hostname }}"
+
+    - name: Edit Home URL
+      shell: php wp-cli.phar option update home http://{{ inventory_hostname }} --path=/var/www/html/
+      args:
+        warn: false
+
+    - name: Edit Site URL
+      shell: php wp-cli.phar option update siteurl http://{{ inventory_hostname }} --path=/var/www/html/
+      args:
+        warn: false
+        
+    - name: Empty access_log and forensic_log
+      shell: "rm -rf /var/log/httpd/access_log* && rm -rf /var/log/httpd/forensic_log* >/var/log/httpd/access_log && >/var/log/httpd/forensic_log"
+      args:
+        warn: false
+
+    - name: restart MySQL Server and enable it
+      service: name=mysqld state=restarted enabled=yes

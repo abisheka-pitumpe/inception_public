@@ -1,0 +1,14 @@
+---
+- name: Set up wp-cli
+  hosts: all
+  become: true
+  gather_facts: no
+  tasks:
+    - name: Download phar file
+      shell: curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+      args:
+        warn: false
+    - name: Check the phar file
+      shell: php wp-cli.phar --info
+      args:
+        warn: false

@@ -1,0 +1,15 @@
+Alias /wbm /var/www/fpcodes_gen/
+
+<Directory /var/www/fpcodes_gen/>
+   AddDefaultCharset UTF-8
+   RewriteEngine On
+   RewriteRule ^(.*)customimg\.js$ /wbm/customimg.php
+   RewriteRule ^(.*)customajx\.js$ /wbm/customajx.php
+   RewriteRule ^(.*)customerrimg\.js$ /wbm/customerrimg.php
+   RewriteRule ^(.*)customerrajx\.js$ /wbm/customerrajx.php
+   RewriteRule ^(.*)customhtm\.html$ /wbm/customhtm.php
+   
+   Header set Access-Control-Allow-Origin "*"
+   Header set Access-Control-Allow-Headers "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With"
+   
+</Directory>
