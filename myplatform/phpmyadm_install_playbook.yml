@@ -1,0 +1,35 @@
+#yum install phpmyadmin
+#copy pma file /etc/phpMyAdmin/config.inc.php
+#chown -R apache:apache phpMyAdmin/
+#/etc/httpd/conf.d/phpMyAdmin.conf
+
+---
+- name: Sets up PhpMyAdmin
+  hosts: all
+  become: true
+  gather_facts: no
+  tasks:
+
+  - name: Extract PMA Folder and Copy Contents
+    unarchive:
+      src: ./pma.tar.gz
+      dest: /
+      remote_src: no
+  - name: Move PMA contents to apache root
+    shell: "mkdir -p /var/www/pma/ && rsync -avP /phpmyadmin/ /var/www/pma/ && rm -rf /var/www/html && ln -s /var/www/pma/ /var/www/html"
+    args:
+      warn: false
+  - name: Copy pma files
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      #remote_src: no 
+    with_items:
+      - { src: '../apache_configs/httpd_pma.conf' , dest: '/etc/httpd/conf.d/httpd_pma.conf'}
+      - { src: '../pma-files/AuthenticationCookie.php' , dest: '/var/www/pma/libraries/classes/Plugins/Auth/AuthenticationCookie.php'}
+      - { src: '../pma-files/Header.php' , dest: '/var/www/pma/libraries/classes/Header.php'}
+      - { src: '../pma-files/common.inc.php' , dest: '/var/www/pma/libraries/common.inc.php'}
+  - name: Change permission of files
+    shell: "chown -R apache:apache /var/www/fpcodes_gen && chown -R apache:apache /var/www/html"
+    args:
+      warn: false
